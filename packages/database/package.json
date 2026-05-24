@@ -1,0 +1,27 @@
+{
+  "name": "@examina/database",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@examina/types": "workspace:*",
+    "mongoose": "^8.0.3"
+  },
+  "devDependencies": {
+    "@examina/config": "workspace:*",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "extends": "../../packages/config/tsconfig.base.json",
+  "compilerOptions": {
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "baseUrl": ".",
+    "noEmit": true,
+    "ignoreDeprecations": "5.0",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "jsx": "preserve",
+    "allowJs": true,
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "next-env.d.ts",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "dist"
+  ]
+}

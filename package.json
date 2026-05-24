@@ -1,0 +1,27 @@
+{
+  "name": "examina",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Production-grade AI Assessment Creator monorepo",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "format": "turbo run format",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "format:fix": "prettier --write ."
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.5",
+    "turbo": "^1.12.4",
+    "typescript": "^5.4.5"
+  },
+  "packageManager": "pnpm@9.0.6",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
