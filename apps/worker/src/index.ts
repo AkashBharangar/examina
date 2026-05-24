@@ -1,13 +1,13 @@
 import { Worker } from 'bullmq';
 import { QueueNames } from '@examina/types';
-import { connectMongoDB, disconnectMongoDB } from './config/mongodb.ts';
-import { disconnectRedis } from './config/redis.ts';
+import { connectMongoDB, disconnectMongoDB } from './config/mongodb';
+import { disconnectRedis } from './config/redis';
 import {
   processAssessment,
   processEvaluation,
   processNotification,
-} from './processors/placeholder.ts';
-import { processQuestionGeneration } from './processors/questionGeneration.ts';
+} from './processors/placeholder';
+import { processQuestionGeneration } from './processors/questionGeneration';
 
 const connection = {
   host: process.env.REDIS_HOST || 'localhost',
@@ -82,8 +82,12 @@ async function startWorkers(): Promise<void> {
     process.exit(0);
   }
 
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', () => {
+    void shutdown();
+  });
+  process.on('SIGTERM', () => {
+    void shutdown();
+  });
 }
 
 startWorkers().catch((error) => {

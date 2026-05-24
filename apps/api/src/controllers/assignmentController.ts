@@ -1,8 +1,12 @@
 import type { Request, Response } from 'express';
-import { createAssignment, getAssignmentById, listAssignments } from '../services/assignmentService.ts';
-import { AppError } from '../middleware/errorHandler.ts';
+import { createAssignment, getAssignmentById, listAssignments } from '../services/assignmentService';
+import { AppError } from '../middleware/errorHandler';
+import type { AssignmentCreateInput } from '../validators/assignment';
 
-export async function createAssignmentController(req: Request, res: Response): Promise<void> {
+export async function createAssignmentController(
+  req: Request<Record<string, string>, unknown, AssignmentCreateInput>,
+  res: Response,
+): Promise<void> {
   const result = await createAssignment(req.body);
 
   res.status(201).json({

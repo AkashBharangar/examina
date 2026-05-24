@@ -1,1 +1,1 @@
-export { initializeSocket, getSocketServer, closeSocketServer } from '../sockets/server.ts';
+export { initializeSocket, getSocketServer, closeSocketServer } from '../sockets/server';

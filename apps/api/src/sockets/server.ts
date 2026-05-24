@@ -1,7 +1,7 @@
 import { Server as HTTPServer } from 'http';
 import { Server } from 'socket.io';
-import { redis } from '../config/redis.ts';
-import { SOCKET_CHANNELS } from './events.ts';
+import { redis } from '../config/redis';
+import { SOCKET_CHANNELS } from './events';
 
 let io: Server | null = null;
 let subscriber = redis.duplicate();
@@ -57,7 +57,7 @@ export async function closeSocketServer(): Promise<void> {
   }
 
   if (io) {
-    io.close();
+    void io.close();
     io = null;
   }
 

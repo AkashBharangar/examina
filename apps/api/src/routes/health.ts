@@ -2,13 +2,13 @@ import { Router, type Router as ExpressRouter } from 'express';
 import mongoose from 'mongoose';
 import { redis } from '../config/redis';
 import { HealthCheckResponse } from '@examina/types';
-import { getSocketServer } from '../config/socket.ts';
+import { getSocketServer } from '../config/socket';
 
 export const healthRouter: ExpressRouter = Router();
 
-healthRouter.get('/', async (req, res) => {
-  const databaseHealth = mongoose.connection.readyState === 1;
-  const redisHealth = redis.status === 'ready';
+healthRouter.get('/', (_req, res) => {
+  const databaseHealth = Number(mongoose.connection.readyState) === 1;
+  const redisHealth = Object.is(redis.status, 'ready');
   const socketHealth = Boolean(getSocketServer());
 
   const response: HealthCheckResponse = {

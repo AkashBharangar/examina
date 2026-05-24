@@ -1,9 +1,10 @@
 import type { NextFunction, Request, Response } from 'express';
-import type { ZodTypeAny } from 'zod';
+import type { RequestHandler } from 'express';
+import type { ZodType } from 'zod';
 import { AppError } from './errorHandler';
 
-export function validateRequest(schema: ZodTypeAny) {
-  return (req: Request, _res: Response, next: NextFunction) => {
+export function validateRequest<TBody>(schema: ZodType<TBody>): RequestHandler<Record<string, string>, unknown, TBody> {
+  return (req: Request<Record<string, string>, unknown, TBody>, _res: Response, next: NextFunction) => {
     const result = schema.safeParse(req.body);
 
     if (!result.success) {

@@ -6,7 +6,7 @@ import type {
   QuestionGenerationJobData,
 } from '@examina/types';
 import { SocketChannels } from '@examina/types';
-import { redis } from '../config/redis.ts';
+import { redis } from '../config/redis';
 
 function buildMockPaper(jobData: QuestionGenerationJobData): GeneratedPaperDocumentShape {
   const sections = jobData.questionConfig.map((config, index) => {
@@ -51,49 +51,67 @@ async function publishGenerationEvent(payload: GenerationEventPayload): Promise<
 }
 
 export async function processQuestionGeneration(job: Job<QuestionGenerationJobData>): Promise<void> {
-  const startedAt = new Date().toISOString();
+  try {
+    const startedAt = new Date().toISOString();
 
-  await AssignmentModel.findByIdAndUpdate(job.data.assignmentId, { status: 'processing' });
-  await job.updateProgress(15);
+    await AssignmentModel.findByIdAndUpdate(job.data.assignmentId, { status: 'processing' });
+    await job.updateProgress(15);
 
-  await publishGenerationEvent({
-    assignmentId: job.data.assignmentId,
-    jobId: job.id ?? job.data.assignmentId,
-    status: 'processing',
-    progress: 15,
-    message: 'Question generation started',
-    timestamp: startedAt,
-  });
-
-  console.log(`✓ worker processing assignment job ${job.id}`);
-
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-  await job.updateProgress(70);
-
-  const paper = buildMockPaper(job.data);
-  await GeneratedPaperModel.findOneAndUpdate(
-    { assignmentId: job.data.assignmentId },
-    {
+    await publishGenerationEvent({
       assignmentId: job.data.assignmentId,
-      sections: paper.sections,
-      totalMarks: paper.totalMarks,
-      generatedAt: new Date(paper.generatedAt),
-    },
-    { upsert: true, new: true },
-  );
+      jobId: job.id ?? job.data.assignmentId,
+      status: 'processing',
+      progress: 15,
+      message: 'Question generation started',
+      timestamp: startedAt,
+    });
 
-  await AssignmentModel.findByIdAndUpdate(job.data.assignmentId, { status: 'completed' });
-  await job.updateProgress(100);
+    console.log(`✓ worker processing assignment job ${job.id}`);
 
-  await publishGenerationEvent({
-    assignmentId: job.data.assignmentId,
-    jobId: job.id ?? job.data.assignmentId,
-    status: 'completed',
-    progress: 100,
-    message: 'Question generation completed',
-    paper,
-    timestamp: new Date().toISOString(),
-  });
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await job.updateProgress(70);
 
-  console.log(`✓ worker completed assignment job ${job.id}`);
+    const paper = buildMockPaper(job.data);
+    await GeneratedPaperModel.findOneAndUpdate(
+      { assignmentId: job.data.assignmentId },
+      {
+        assignmentId: job.data.assignmentId,
+        sections: paper.sections,
+        totalMarks: paper.totalMarks,
+        generatedAt: new Date(paper.generatedAt),
+      },
+      { upsert: true, new: true },
+    );
+
+    await AssignmentModel.findByIdAndUpdate(job.data.assignmentId, { status: 'completed' });
+    await job.updateProgress(100);
+
+    await publishGenerationEvent({
+      assignmentId: job.data.assignmentId,
+      jobId: job.id ?? job.data.assignmentId,
+      status: 'completed',
+      progress: 100,
+      message: 'Question generation completed',
+      paper,
+      timestamp: new Date().toISOString(),
+    });
+
+    console.log(`✓ worker completed assignment job ${job.id}`);
+  } catch (error) {
+    await AssignmentModel.findByIdAndUpdate(job.data.assignmentId, { status: 'failed' });
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown worker error';
+    await publishGenerationEvent({
+      assignmentId: job.data.assignmentId,
+      jobId: job.id ?? job.data.assignmentId,
+      status: 'failed',
+      progress: 100,
+      message: 'Question generation failed',
+      error: errorMessage,
+      timestamp: new Date().toISOString(),
+    });
+
+    console.error(`✗ worker failed assignment job ${job.id}: ${errorMessage}`);
+    throw error;
+  }
 }

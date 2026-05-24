@@ -1,10 +1,10 @@
 import { AssignmentModel, GeneratedPaperModel } from '@examina/database';
-import type { QuestionGenerationJobData } from '@examina/types';
-import { redis } from '../config/redis.ts';
-import { questionGenerationQueue } from '../config/queues.ts';
-import { AppError } from '../middleware/errorHandler.ts';
-import { SOCKET_CHANNELS } from '../sockets/events.ts';
-import type { AssignmentCreateInput } from '../validators/assignment.ts';
+import type { GenerationEventPayload, QuestionGenerationJobData } from '@examina/types';
+import { redis } from '../config/redis';
+import { questionGenerationQueue } from '../config/queues';
+import { AppError } from '../middleware/errorHandler';
+import { SOCKET_CHANNELS } from '../sockets/events';
+import type { AssignmentCreateInput } from '../validators/assignment';
 
 export async function createAssignment(payload: AssignmentCreateInput) {
   const assignment = await AssignmentModel.create({
@@ -12,7 +12,7 @@ export async function createAssignment(payload: AssignmentCreateInput) {
     dueDate: payload.dueDate,
     instructions: payload.instructions ?? '',
     uploadedMaterial: payload.uploadedMaterial ?? null,
-    status: 'queued',
+    status: 'draft',
     questionConfig: payload.questionConfig,
   });
 
@@ -25,26 +25,45 @@ export async function createAssignment(payload: AssignmentCreateInput) {
     uploadedMaterial: assignment.uploadedMaterial,
   };
 
-  const job = await questionGenerationQueue.add('generate-paper', jobData, {
-    jobId: assignment._id.toString(),
-  });
+  try {
+    const job = await questionGenerationQueue.add('generate-paper', jobData, {
+      jobId: assignment._id.toString(),
+    });
 
-  const queuedEvent = {
-    assignmentId: assignment._id.toString(),
-    jobId: job.id ?? assignment._id.toString(),
-    status: 'queued',
-    progress: 0,
-    message: 'Assignment queued for generation',
-    timestamp: new Date().toISOString(),
-  };
+    await AssignmentModel.findByIdAndUpdate(assignment._id, { status: 'queued' });
 
-  console.log('✓ queue event: assignment queued', queuedEvent);
-  await redis.publish(SOCKET_CHANNELS.GENERATION, JSON.stringify(queuedEvent));
+    const queuedEvent: GenerationEventPayload = {
+      assignmentId: assignment._id.toString(),
+      jobId: job.id ?? assignment._id.toString(),
+      status: 'queued',
+      progress: 0,
+      message: 'Assignment queued for generation',
+      timestamp: new Date().toISOString(),
+    };
 
-  return {
-    assignmentId: assignment._id.toString(),
-    jobId: job.id ?? assignment._id.toString(),
-  };
+    console.log('✓ queue event: assignment queued', queuedEvent);
+    await redis.publish(SOCKET_CHANNELS.GENERATION, JSON.stringify(queuedEvent));
+
+    return {
+      assignmentId: assignment._id.toString(),
+      jobId: job.id ?? assignment._id.toString(),
+    };
+  } catch (error) {
+    await AssignmentModel.findByIdAndUpdate(assignment._id, { status: 'failed' });
+
+    const failedEvent: GenerationEventPayload = {
+      assignmentId: assignment._id.toString(),
+      jobId: assignment._id.toString(),
+      status: 'failed',
+      progress: 0,
+      message: 'Failed to enqueue assignment generation',
+      error: error instanceof Error ? error.message : 'Unknown queue error',
+      timestamp: new Date().toISOString(),
+    };
+
+    await redis.publish(SOCKET_CHANNELS.GENERATION, JSON.stringify(failedEvent));
+    throw new AppError('Failed to enqueue assignment generation', 500, 'QUEUE_ENQUEUE_FAILED');
+  }
 }
 
 export async function listAssignments() {

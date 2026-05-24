@@ -1,13 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
-import { connectMongoDB, disconnectMongoDB } from './config/mongodb.ts';
-import { disconnectRedis } from './config/redis.ts';
-import { initializeSocket, closeSocketServer } from './config/socket.ts';
-import { closeQueues } from './config/queues.ts';
-import { assignmentsRouter } from './routes/assignments.ts';
-import { healthRouter } from './routes/health.ts';
-import { errorHandler, notFoundHandler } from './middleware/errorHandler.ts';
+import { connectMongoDB, disconnectMongoDB } from './config/mongodb';
+import { disconnectRedis } from './config/redis';
+import { initializeSocket, closeSocketServer } from './config/socket';
+import { closeQueues } from './config/queues';
+import { assignmentsRouter } from './routes/assignments';
+import { healthRouter } from './routes/health';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000');
@@ -23,7 +23,7 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 const httpServer = createServer(app);
-const io = initializeSocket(httpServer);
+initializeSocket(httpServer);
 
 async function bootstrap(): Promise<void> {
   try {
@@ -48,7 +48,11 @@ async function shutdown(): Promise<void> {
   process.exit(0);
 }
 
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+process.on('SIGINT', () => {
+  void shutdown();
+});
+process.on('SIGTERM', () => {
+  void shutdown();
+});
 
-bootstrap();
+void bootstrap();
