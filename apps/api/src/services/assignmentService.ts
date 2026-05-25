@@ -38,15 +38,26 @@ export async function createAssignment(payload: AssignmentCreateInput) {
     uploadedMaterial: assignment.uploadedMaterial,
   };
 
-  console.log('[Queue] prepared job payload:', jobData);
+  console.log('[Queue Producer] prepared job payload:', {
+    queue: questionGenerationQueue.name,
+    payload: jobData,
+  });
 
   try {
-    console.log('[Queue] adding BullMQ job...', { queue: 'question-generation', jobId: assignment._id.toString() });
+    console.log('[Queue Producer] adding BullMQ job...', {
+      queue: questionGenerationQueue.name,
+      jobName: 'generate-paper',
+      jobId: assignment._id.toString(),
+    });
     const job = await questionGenerationQueue.add('generate-paper', jobData, {
       jobId: assignment._id.toString(),
     });
 
-    console.log('[Queue] BullMQ add succeeded:', { jobId: job.id, queue: 'question-generation' });
+    console.log('[Queue Producer] BullMQ add succeeded:', {
+      jobId: job.id,
+      jobName: job.name,
+      queue: questionGenerationQueue.name,
+    });
 
     await AssignmentModel.findByIdAndUpdate(assignment._id, { status: 'queued' });
 
@@ -75,7 +86,7 @@ export async function createAssignment(payload: AssignmentCreateInput) {
       status: 'queued' as const,
     };
   } catch (error) {
-    console.error('[Queue] assignment enqueue failed:', error);
+    console.error('[Queue Producer] assignment enqueue failed:', error);
 
     await AssignmentModel.findByIdAndUpdate(assignment._id, { status: 'failed' });
 

@@ -54,6 +54,7 @@ export interface QuestionGenerationJobData {
   instructions?: string;
   dueDate: string;
   uploadedMaterial?: UploadedMaterial | null;
+  uploadedMaterialText?: string;
 }
 
 export type GenerationEventStatus = 'queued' | 'processing' | 'completed' | 'failed';
