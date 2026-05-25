@@ -22,8 +22,8 @@ function buildMockPaper(jobData: QuestionGenerationJobData): GeneratedPaperDocum
 
     return {
       title: `${index + 1}. ${sectionTitleMap[config.type] ?? 'Section'}`,
-      instruction: `Answer all ${config.questions} questions carefully.`,
-      questions: Array.from({ length: config.questions }, (_, questionIndex) => ({
+      instruction: `Answer all ${config.count} questions carefully.`,
+      questions: Array.from({ length: config.count }, (_, questionIndex) => ({
         text: `Question ${questionIndex + 1} for ${sectionTitleMap[config.type] ?? config.type}`,
         difficulty: difficultyCycle[questionIndex % difficultyCycle.length]!,
         marks: config.marks,
@@ -46,13 +46,20 @@ function buildMockPaper(jobData: QuestionGenerationJobData): GeneratedPaperDocum
 }
 
 async function publishGenerationEvent(payload: GenerationEventPayload): Promise<void> {
+  console.log('[Redis] worker publishing generation event:', payload);
   await redis.publish(SocketChannels.GENERATION, JSON.stringify(payload));
-  console.log(`✓ websocket emit: generation:${payload.status}`, payload.assignmentId);
+  console.log(`[Worker] websocket emit: generation:${payload.status}`, payload.assignmentId);
 }
 
 export async function processQuestionGeneration(job: Job<QuestionGenerationJobData>): Promise<void> {
   try {
     const startedAt = new Date().toISOString();
+
+    console.log('[Worker] starting question generation job:', {
+      jobId: job.id,
+      assignmentId: job.data.assignmentId,
+      questionConfigCount: job.data.questionConfig.length,
+    });
 
     await AssignmentModel.findByIdAndUpdate(job.data.assignmentId, { status: 'processing' });
     await job.updateProgress(15);
@@ -96,8 +103,10 @@ export async function processQuestionGeneration(job: Job<QuestionGenerationJobDa
       timestamp: new Date().toISOString(),
     });
 
-    console.log(`✓ worker completed assignment job ${job.id}`);
+    console.log(`[Worker] completed assignment job ${job.id}`);
   } catch (error) {
+    console.error('[Worker] question generation job failed:', error);
+
     await AssignmentModel.findByIdAndUpdate(job.data.assignmentId, { status: 'failed' });
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown worker error';

@@ -7,6 +7,14 @@ import { SOCKET_CHANNELS } from '../sockets/events';
 import type { AssignmentCreateInput } from '../validators/assignment';
 
 export async function createAssignment(payload: AssignmentCreateInput) {
+  console.log('[API] createAssignment received payload:', {
+    title: payload.title,
+    dueDate: payload.dueDate,
+    instructionsLength: payload.instructions?.length ?? 0,
+    questionConfigCount: payload.questionConfig.length,
+    uploadedMaterial: payload.uploadedMaterial ? { name: payload.uploadedMaterial.name, size: payload.uploadedMaterial.size, type: payload.uploadedMaterial.type } : null,
+  });
+
   const assignment = await AssignmentModel.create({
     title: payload.title,
     dueDate: payload.dueDate,
@@ -14,6 +22,11 @@ export async function createAssignment(payload: AssignmentCreateInput) {
     uploadedMaterial: payload.uploadedMaterial ?? null,
     status: 'draft',
     questionConfig: payload.questionConfig,
+  });
+
+  console.log('[API] mongo save succeeded:', {
+    assignmentId: assignment._id.toString(),
+    status: assignment.status,
   });
 
   const jobData: QuestionGenerationJobData = {
@@ -25,12 +38,19 @@ export async function createAssignment(payload: AssignmentCreateInput) {
     uploadedMaterial: assignment.uploadedMaterial,
   };
 
+  console.log('[Queue] prepared job payload:', jobData);
+
   try {
+    console.log('[Queue] adding BullMQ job...', { queue: 'question-generation', jobId: assignment._id.toString() });
     const job = await questionGenerationQueue.add('generate-paper', jobData, {
       jobId: assignment._id.toString(),
     });
 
+    console.log('[Queue] BullMQ add succeeded:', { jobId: job.id, queue: 'question-generation' });
+
     await AssignmentModel.findByIdAndUpdate(assignment._id, { status: 'queued' });
+
+    console.log('[API] assignment status updated to queued:', assignment._id.toString());
 
     const queuedEvent: GenerationEventPayload = {
       assignmentId: assignment._id.toString(),
@@ -41,15 +61,25 @@ export async function createAssignment(payload: AssignmentCreateInput) {
       timestamp: new Date().toISOString(),
     };
 
-    console.log('✓ queue event: assignment queued', queuedEvent);
+    console.log('[Redis] publishing queued event:', queuedEvent);
     await redis.publish(SOCKET_CHANNELS.GENERATION, JSON.stringify(queuedEvent));
+
+    console.log('[Redis] publish succeeded for queued event:', {
+      assignmentId: queuedEvent.assignmentId,
+      jobId: queuedEvent.jobId,
+    });
 
     return {
       assignmentId: assignment._id.toString(),
       jobId: job.id ?? assignment._id.toString(),
+      status: 'queued' as const,
     };
   } catch (error) {
+    console.error('[Queue] assignment enqueue failed:', error);
+
     await AssignmentModel.findByIdAndUpdate(assignment._id, { status: 'failed' });
+
+    console.log('[API] assignment status updated to failed:', assignment._id.toString());
 
     const failedEvent: GenerationEventPayload = {
       assignmentId: assignment._id.toString(),
@@ -61,6 +91,7 @@ export async function createAssignment(payload: AssignmentCreateInput) {
       timestamp: new Date().toISOString(),
     };
 
+    console.log('[Redis] publishing failure event:', failedEvent);
     await redis.publish(SOCKET_CHANNELS.GENERATION, JSON.stringify(failedEvent));
     throw new AppError('Failed to enqueue assignment generation', 500, 'QUEUE_ENQUEUE_FAILED');
   }

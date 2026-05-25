@@ -20,7 +20,17 @@ export function notFoundHandler(_req: Request, _res: Response, next: NextFunctio
 export function errorHandler(error: unknown, _req: Request, res: Response, _next: NextFunction): void {
   const normalizedError = error instanceof AppError ? error : new AppError('Internal server error');
 
-  console.error('API error:', normalizedError.message, normalizedError.details ?? '');
+  console.error('[API] error handler received error object:', error);
+  console.error('[API] normalized error:', {
+    message: normalizedError.message,
+    code: normalizedError.code,
+    statusCode: normalizedError.statusCode,
+    details: normalizedError.details ?? null,
+  });
+
+  if (error instanceof Error && error.stack) {
+    console.error('[API] stack trace:\n' + error.stack);
+  }
 
   res.status(normalizedError.statusCode).json({
     success: false,

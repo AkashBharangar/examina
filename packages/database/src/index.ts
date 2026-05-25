@@ -1,3 +1,3 @@
-export * from './connection';
-export * from './models/assignment';
-export * from './models/generatedPaper';
+export * from './connection.js';
+export * from './models/assignment.js';
+export * from './models/generatedPaper.js';

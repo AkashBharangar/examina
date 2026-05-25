@@ -10,7 +10,10 @@ let subscribed = false;
 async function subscribeToGenerationEvents(): Promise<void> {
   if (subscribed) return;
 
-  await subscriber.connect();
+  if (subscriber.status === 'wait') {
+    await subscriber.connect();
+  }
+
   subscriber.on('message', (channel, message) => {
     if (!io || channel !== SOCKET_CHANNELS.GENERATION) return;
 

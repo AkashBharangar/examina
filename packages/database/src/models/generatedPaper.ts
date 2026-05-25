@@ -1,5 +1,8 @@
-import { Schema, model, models, type InferSchemaType, type Model } from 'mongoose';
+import mongoose from 'mongoose';
+import type { InferSchemaType, Model } from 'mongoose';
 import type { GeneratedSection } from '@examina/types';
+
+const { Schema, model, models } = mongoose;
 
 const generatedQuestionSchema = new Schema(
   {

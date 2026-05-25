@@ -17,7 +17,7 @@ export const questionConfigSchema = z.object({
   type: z.enum(questionTypeValues, {
     errorMap: () => ({ message: 'Choose a question type' }),
   }),
-  questions: z
+  count: z
     .number({ invalid_type_error: 'Enter the number of questions' })
     .int('Use a whole number')
     .min(1, 'At least 1 question is required'),
@@ -62,7 +62,7 @@ export type QuestionType = AssignmentCreateValues['questions'][number]['type'];
 
 export const defaultQuestionConfig = (): AssignmentCreateValues['questions'][number] => ({
   type: 'mcq',
-  questions: 1,
+  count: 1,
   marks: 1,
 });
 

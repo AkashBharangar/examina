@@ -96,8 +96,8 @@ export function AssignmentCreateForm() {
 
     return questions.reduce(
       (accumulator, question) => ({
-        totalQuestions: accumulator.totalQuestions + (Number(question?.questions) || 0),
-        totalMarks: accumulator.totalMarks + (Number(question?.questions) || 0) * (Number(question?.marks) || 0),
+        totalQuestions: accumulator.totalQuestions + (Number(question?.count) || 0),
+        totalMarks: accumulator.totalMarks + (Number(question?.count) || 0) * (Number(question?.marks) || 0),
       }),
       { totalQuestions: 0, totalMarks: 0 },
     );
@@ -140,7 +140,7 @@ export function AssignmentCreateForm() {
 
     append({
       type: nextType,
-      questions: 1,
+      count: 1,
       marks: 1,
     });
   };

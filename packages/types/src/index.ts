@@ -1,4 +1,3 @@
-export * from './api';
-export * from './assignments';
-export * from './queues';
-
+export * from './api.js';
+export * from './assignments.js';
+export * from './queues.js';

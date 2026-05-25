@@ -21,7 +21,7 @@ export const assignmentCreateValidator = z
     questionConfig: z.array(
       z.object({
         type: z.enum(questionTypes),
-        questions: z.number().int().min(1, 'At least 1 question is required'),
+        count: z.number().int().min(1, 'At least 1 question is required'),
         marks: z.number().int().min(1, 'Marks must be greater than 0'),
       }),
     ).min(1, 'Add at least one question type'),

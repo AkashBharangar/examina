@@ -1,5 +1,8 @@
-import mongoose, { Schema, model, models, type InferSchemaType, type Model } from 'mongoose';
+import mongoose from 'mongoose';
+import type { InferSchemaType, Model } from 'mongoose';
 import type { AssignmentQuestionConfig, AssignmentStatus, UploadedMaterial } from '@examina/types';
+
+const { Schema, model, models } = mongoose;
 
 const uploadedMaterialSchema = new Schema<UploadedMaterial>(
   {
@@ -18,7 +21,7 @@ const questionConfigSchema = new Schema<AssignmentQuestionConfig>(
       required: true,
       enum: ['mcq', 'short', 'long', 'diagram', 'numerical'],
     },
-    questions: { type: Number, required: true, min: 1 },
+    count: { type: Number, required: true, min: 1 },
     marks: { type: Number, required: true, min: 1 },
   },
   { _id: false },

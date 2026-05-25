@@ -11,7 +11,7 @@ export interface UploadedMaterial {
 
 export interface AssignmentQuestionConfig {
   type: QuestionType;
-  questions: number;
+  count: number;
   marks: number;
 }
 

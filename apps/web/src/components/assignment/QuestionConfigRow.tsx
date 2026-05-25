@@ -25,7 +25,7 @@ export function QuestionConfigRow({ index, onRemove, selectedTypes, canRemove }:
   const currentType = useWatch({ control, name: `questions.${index}.type` });
 
   const typeErrors = errors.questions?.[index]?.type?.message;
-  const questionCountError = errors.questions?.[index]?.questions?.message;
+  const questionCountError = errors.questions?.[index]?.count?.message;
   const marksError = errors.questions?.[index]?.marks?.message;
 
   const disabledTypes = useMemo(
@@ -55,7 +55,7 @@ export function QuestionConfigRow({ index, onRemove, selectedTypes, canRemove }:
           step={1}
           label="Number of Questions"
           error={questionCountError}
-          {...register(`questions.${index}.questions`, { valueAsNumber: true })}
+          {...register(`questions.${index}.count`, { valueAsNumber: true })}
         />
 
         <Input
